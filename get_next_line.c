@@ -100,7 +100,7 @@ char	*get_next_line(int fd)
 	i = 0;
 	while (i < FOPEN_MAX)
 	{
-		if (i == (size_t)fd))
+		if (i == (size_t)fd)
 			buf = stash[i];
 		i++;
 	}
