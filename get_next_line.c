@@ -45,22 +45,27 @@ ssize_t	get_endindex(char *str)
 static void reindex_buffer(ssize_t seg_len, char *buf)
 {
 	ssize_t	i;
-	
+
 	if (seg_len == my_strlen(buf))
 	{
 		i = -1;
-		while((++i) < BUFFER_SIZE)
+		while(buf[(++i)])
 			buf[i] = 0;
 		return ;
 	}
 	i = seg_len;
-	while (i < BUFFER_SIZE)
+	while (i - seg_len < BUFFER_SIZE)
 	{
-		buf[i - seg_len] = buf[i];
-		buf[i] = 0;	
+		buf[i - seg_len] = 0;
+		if (i < BUFFER_SIZE)
+		{
+			buf[i - seg_len] = buf[i];
+			buf[i] = 0;
+		}
 		i++;
 	}
 }
+
 static char *pop_firstsegment(char *line, char *buf)
 {   
 	char	*result;
@@ -92,10 +97,11 @@ char	*get_next_line(int fd)
 	static char	stash[FOPEN_MAX][BUFFER_SIZE + 1];
 	char		*buf;
 	char		*line;
+	char		*old_line;
 	ssize_t		readqty;
 	size_t		i;
 
-	if (fd > FOPEN_MAX)
+	if (fd < 0 || fd > FOPEN_MAX)
 		return (NULL);
 	i = 0;
 	while (i < FOPEN_MAX)
@@ -106,12 +112,15 @@ char	*get_next_line(int fd)
 	}
 	readqty = 0;
 	line = pop_firstsegment(NULL, buf);
-	while (get_endindex(line) == -1)
+	while (readqty != -1 && get_endindex(line) == -1)
 	{
 		if (my_strlen(buf) <= 0)
 			readqty = read(fd, buf, BUFFER_SIZE);
+		old_line = line;
 		line = pop_firstsegment(line, buf);
-		if (!readqty && !my_strlen(buf))
+		if (old_line)
+			free(old_line);
+		if (readqty <= 0 && my_strlen(buf) == 0)
 			return (line);
 	}
 	return (line);
